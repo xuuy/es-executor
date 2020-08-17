@@ -4,6 +4,57 @@ type LanguageType = string | number | boolean | null | undefined | object
 type SpecificationType = Reference | List | Completion | PropertyDescriptors | PropertyIdentifier | LexicalEnvironment | EnvironmentRecord
 /** ECMAScript Language Type And Specification Type */
 type Type = LanguageType & SpecificationType
+/* 原始值 */
+type PrimitiveType = string | number | boolean | null | undefined
+/* 并非由宿主环境，而是完全由规范定义其语义的对象 */
+type NativeObject = object
+/* 由 ECMAScript 实现提供，独立于宿主环境的对象，ECMAScript 程序开始执行时就存在 */
+type BuiltInObject = object
+/* 由宿主环境提供的对象，用于完善 ECMAScript 执行环境 */
+type HostObject = object
+/* 标识符名称不能是关键字，可以使用$_符号 */
+type Identifier = string
+/* 所有对象内部共有的属性和方法 */
+type InternalPropAndMethod = {
+  /* 对象的原型 */
+  '[[Prototype]]': object | null
+  /* 规范定义的对象分类的一个字符串值 */
+  '[[Class]]': string
+  /* 是否可以向对象添加自身属性 */
+  '[[Extensible]]': boolean
+  /* 获取自身属性的描述符 */
+  '[[GetOwnProperty]]'(P: string): PropertyDescriptors | undefined
+  /* 可以获取proto上属性的描述符 */
+  '[[GetProperty]]'(P: string): PropertyDescriptors | undefined
+  /* 获取属性的值 */
+  '[[Get]]'(P: string): LanguageType
+  /* 是否可以为属性设置值 */
+  '[[CanPut]]'(P: string): boolean
+  /* 为属性设置值 */
+  '[[Put]]'(P: string, V: LanguageType, Throw: boolean): void
+  /* 判断对象上是否含有该属性 */
+  '[[HasProperty]]'(P: string): boolean
+  /* 删除对象上的属性 */
+  '[[Delete]]'(P: string, Throw: boolean): boolean
+  /* 返回对象的默认值 */
+  '[[DefaultValue]]'(hint: string): PrimitiveType
+  /* 创建或修改自身的属性描述符 */
+  '[[DefineOwnProperty]]'(P: string, Desc: PropertyDescriptors, Throw: boolean): boolean
+}
+
+/* 函数被调用时，会有声明绑定初始化过程，会创建FunctionObject */
+type FunctionObject = {
+  '[[Call]]': Function
+  '[[Construct]]': Function
+  '[[HasInstance]]': boolean
+  '[[FormalParameters]]': List
+  '[[Code]]': string
+  '[[Scope]]': LexicalEnvironment
+  /* FormalParameters的个数 */
+  length: number
+  /* 函数独有的属性，构造器专用 */
+  prototype: object
+} & InternalPropAndMethod
 
 type Reference = {
   /** A base value of undefined indicates that the reference could not be resolved to a binding */
@@ -26,6 +77,10 @@ type HasPrimitiveBase = (V: Reference) => boolean
 type IsPropertyReference = (V: Reference) => boolean
 /**  Returns true if the base value is undefined and false otherwise. */
 type IsUnresolvableReference = (V: Reference) => boolean
+/* 获取ECMAScript的值 */
+type GetValue = (V: LanguageType | Reference) => LanguageType | FunctionObject
+/* 设置对象的值 */
+type PutValue = (V: Reference, W: LanguageType) => void
 
 /** http://www.ecma-international.org/ecma-262/5.1/index.html#sec-8.8 */
 type List = LanguageType[]
@@ -39,20 +94,28 @@ type Completion = {
   type: 'normal' | 'break' | 'continue' | 'return' | 'throw'
   value: LanguageType | 'empty'
   /** any ECMAScript identifier or empty. */
-  target: 'empty'
+  target: Identifier | 'empty'
 }
 
 type PropertyDescriptors = AccessorDescriptor | DataDescriptor
 type AccessorDescriptor = {
+  /* default undefined */
   '[[Get]]'?: () => any
+  /* default undefined */
   '[[Set]]'?: (arg: any) => void
+  /* default false */
   '[[Enumerable]]'?: boolean
+  /* default false */
   '[[Configurable]]'?: boolean
 }
 type DataDescriptor = {
+  /* default undefined */
   '[[Value]]'?: LanguageType
+  /* default false */
   '[[Writable]]'?: boolean
+  /* default false */
   '[[Enumerable]]'?: boolean
+  /* default false */
   '[[Configurable]]'?: boolean
 }
 type PropertyIdentifier = Record<string, PropertyDescriptors>
@@ -121,8 +184,3 @@ type ExecutionContextStack = ExecutionContext[]
 
 /** 最顶层的执行环境称为当前运行的执行环境 */
 type RunningExecutionContext = ExecutionContext
-
-type FunctionObject = {
-  '[[Call]]': Function
-  '[[Construtor]]': Function
-}
