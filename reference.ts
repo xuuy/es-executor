@@ -5,7 +5,6 @@
 import {toObject} from "./Language-Type/convert-type";
 import {IsAccessorDescriptor, IsDataDescriptor} from "./descriptor";
 import {Type} from "./util";
-import {runningExecutionContext} from ".";
 
 export function Reference(value: Reference['base'], name: string, strict: boolean): Reference {
     return {
@@ -87,6 +86,6 @@ export function GetValue(V: any) {
         // step 5: Else, base must be an environment record
         // step 5.1: Return the result of calling the GetBindingValue (see 10.2.1) concrete method
         // of base passing GetReferencedName(V) and IsStrictReference(V) as arguments.
-        return runningExecutionContext.LexicalEnvironment.EnvironmentRecord.GetBindingValue(GetReferencedName(V), IsStrictReference(V))
+        return (base as EnvironmentRecord).GetBindingValue(GetReferencedName(V), IsStrictReference(V))
     }
 }
