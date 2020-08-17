@@ -90,7 +90,7 @@ console.log(a);
 - FunctionContext
 - ...
 
-以上知识点太多太抽象，对于上面的代码核心的点就只有几个`FunctionExpression`、`LexicalEnvironment`
+以上知识点太多太抽象，对于上面的代码核心的点就只有几个`FunctionExpression`、`LexicalEnvironment`、`EnvironmentRecord`
 
 1. 在`JS`中表示一个函数可以有两种方式
 
@@ -143,7 +143,7 @@ FunctionExpression:  function Identifier? ( FormalParameterList? ) { FunctionBod
 ，注意这里只是提升了声明并没有提升赋值运算符，所以第三题的代码就变成了下面这样
 
 ```js
-var a = undefined;
+var a;
 function a() { // a变成了函数
   console.log(a);
   a = 20;
@@ -154,4 +154,11 @@ a();
 console.log(a);
 ```
 
-所以最后执行到`a()`时，`a`的值是`10`，就会报错了
+1. var和函数声明都提升到了顶部
+2. 执行第一句`var a`，会在`GlobalContext`的`LexicalEnvironment`的`EnvironmentRecord`下创建一个`Identifier a`可变的绑定，
+并赋予初始值`undefined`
+3. 执行第二句时，先通过`Identifier(函数名)`a去`EnvironmentRecord`中判断是否存在该绑定，上一步已经创建了(如果不存在，跟上一步一样的操作)
+进入下一步
+4. 创建一个`Function Object`，再将`Identifier(函数名)`、`Function Object`在`EnvironmentRecord`中设置绑定，即`a = Function Object`
+5. 执行`a = 10`，同理在`EnvironmentRecord`中设置绑定，即`a = 10`
+6. 所以最后执行到`a()`时，`a`的值是`10`，就会报错了
